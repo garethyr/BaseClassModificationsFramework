@@ -2,7 +2,6 @@
 ------------------------------------ ATTENTION ----------------------------------
 ----------- This file allows modders to Modify to Base game functions -----------
 ------------ Always ensure you have the most up to date version from ------------
--------- https://github.com/garethyr/CortexCommandBaseClassModifications --------
 --------------------------------- Version 0.0.1 ---------------------------------
 ---------------------------------------------------------------------------------
 
@@ -199,7 +198,20 @@ do
 	end
 	
 	function VectorModifications:RadRotate(angle, ...)
+		local argumentErrorTable = {"Vector", "RadRotate", {type(angle)}, {{"number"}, {"number", "boolean"}}};
+	
+		if (type(angle) ~= "number") then
+			printArgumentError(argumentErrorTable);
+		end
+	
 		if (select("#", ...) > 0) then
+			local doCopy = select(1, ...);
+			
+			if (type(doCopy) ~= "boolean") then
+				table.insert(argumentErrorTable[3], type(doCopy)); --Add doCopy's type as a supplied argument type for the argument error table
+				printArgumentError(argumentErrorTable);
+			end
+			
 			return self:Copy():RadRotate_BASE(angle);
 		end
 		return self:RadRotate_BASE(angle);
@@ -289,11 +301,18 @@ do
 	end
 
 	function SceneManagerModifications:ShortestDistance(vector1, vector2, ...)
+		local argumentErrorTable = {"SceneManager", "ShortestDistance", {type(vector1) == "userdata" and point.ClassName or type(point), type(vector2) == "userdata" and point.ClassName or type(point)}, {{"Vector", "Vector"}, {"Vector", "Vector", "boolean"}}};
+	
 		local accountForWrapping = true; --Default to true
 		
 		if (select("#", ...) > 0) then
 			accountForWrapping = select(1, ...);
 		end
+		
+		if ((type(vector1) ~= "userdata" or vector1.ClassName ~= "Vector") or (type(vector2 ~= "userdata" or vector2.ClassName ~= "Vector"))) then
+			printArgumentError(argumentErrorTable);
+		end
+		
 		return SceneMan:ShortestDistance_BASE(vector1, vector2, accountForWrapping);
 	end
 	

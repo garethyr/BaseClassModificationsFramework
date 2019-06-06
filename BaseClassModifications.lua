@@ -2,6 +2,7 @@
 ------------------------------------ ATTENTION ----------------------------------
 ----------- This file allows modders to Modify to Base game functions -----------
 ------------ Always ensure you have the most up to date version from ------------
+-------- https://github.com/garethyr/CortexCommandBaseClassModifications --------
 --------------------------------- Version 0.0.1 ---------------------------------
 ---------------------------------------------------------------------------------
 

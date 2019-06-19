@@ -54,6 +54,9 @@ end
 --suppliedArgumentTypes - A table of the types of the incorrect arguments passed in to the function. Obtainable by using type(argument) for each argument.
 --allowedArgumentTypeSets - A table of tables, each subtable of which contains a string set of allowed arguments. E.g. A function that supports a number argument and, optionally, a Vector argument would have the table {{"number"}, {"number", "Vector"}}.
 --isConstructor - Whether or not the called function was a constructor. This changes some wording and is mostly not used. Defaults to false.
+
+--TODO This should have a parent function that does error checking based on the table. Need to reorganize stuff a little but it'd make it nice and easy for others to follow a template
+
 local function printArgumentError(classNameOrErrorDataTable, functionName, suppliedArgumentTypes, allowedArgumentTypeSets, isConstructor)
 	local className = classNameOrErrorDataTable;
 	
@@ -302,7 +305,7 @@ do
 	end
 
 	function SceneManagerModifications:ShortestDistance(vector1, vector2, ...)
-		local argumentErrorTable = {"SceneManager", "ShortestDistance", {type(vector1) == "userdata" and point.ClassName or type(point), type(vector2) == "userdata" and point.ClassName or type(point)}, {{"Vector", "Vector"}, {"Vector", "Vector", "boolean"}}};
+		local argumentErrorTable = {"SceneManager", "ShortestDistance", {type(vector1) == "userdata" and vector1.ClassName or type(vector1), type(vector2) == "userdata" and vector2.ClassName or type(vector2)}, {{"Vector", "Vector"}, {"Vector", "Vector", "boolean"}}};
 	
 		local accountForWrapping = true; --Default to true
 		
@@ -310,7 +313,7 @@ do
 			accountForWrapping = select(1, ...);
 		end
 		
-		if ((type(vector1) ~= "userdata" or vector1.ClassName ~= "Vector") or (type(vector2 ~= "userdata" or vector2.ClassName ~= "Vector"))) then
+		if ((type(vector1) ~= "userdata" or vector1.ClassName ~= "Vector") or (type(vector2) ~= "userdata" or vector2.ClassName ~= "Vector")) then
 			printArgumentError(argumentErrorTable);
 		end
 		

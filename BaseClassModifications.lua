@@ -1,6 +1,7 @@
 ---------------------------------------------------------------------------------
 ------------------------------------ ATTENTION ----------------------------------
------------ This file allows modders to Modify to Base game functions -----------
+----------- This file allows modders to Modify to Base Game functions -----------
+----------It can also be used to add but not modify, Core Lua functions----------
 ------------ Always ensure you have the most up to date version from ------------
 -------- https://github.com/garethyr/CortexCommandBaseClassModifications --------
 --------------------------------- Version 0.0.1 ---------------------------------
@@ -57,7 +58,7 @@ end
 
 --TODO This should have a parent function that does error checking based on the table. Need to reorganize stuff a little but it'd make it nice and easy for others to follow a template
 
-local function printArgumentError(classNameOrErrorDataTable, functionName, suppliedArgumentTypes, allowedArgumentTypeSets, isConstructor)
+local function printArgumentError(classNameOrErrorDataTable, functionName, suppliedArgumentTypes, allowedArgumentTypeSets, isConstructor, usesPeriodInsteadOfSemiColon)
 	local className = classNameOrErrorDataTable;
 	
 	if (type(classNameOrErrorDataTable) == "table") then
@@ -65,7 +66,8 @@ local function printArgumentError(classNameOrErrorDataTable, functionName, suppl
 		functionName = classNameOrErrorDataTable.functionName or classNameOrErrorDataTable[2];
 		suppliedArgumentTypes = classNameOrErrorDataTable.suppliedArgumentTypes or classNameOrErrorDataTable[3];
 		allowedArgumentTypeSets = classNameOrErrorDataTable.allowedArgumentTypeSets or classNameOrErrorDataTable[4];
-		isConstructor = classNameOrErrorDataTable.isConstructor or classNameOrErrorDataTable[6] or false; --Default to false
+		isConstructor = classNameOrErrorDataTable.isConstructor or classNameOrErrorDataTable[5] or false; --Default to false
+		usesPeriodInsteadOfSemiColon = classNameOrErrorDataTable.usesPeriodInsteadOfSemiColon or classNameOrErrorDataTable[6] or false; --Default to false
 	end
 
 	local errorString = "ERROR: no ";
@@ -73,7 +75,7 @@ local function printArgumentError(classNameOrErrorDataTable, functionName, suppl
 	errorString = errorString..string.format("of '%s:%s' matched the arguments (%s)", className, functionName, className..", "..table.concat(suppliedArgumentTypes, ", ")).."\n";
 	errorString = errorString.."candidates are:\n";
 	for _, allowedArgumentTypeSet in  ipairs(allowedArgumentTypeSets) do
-		errorString = errorString..string.format("%s:%s(%s)", className, functionName, table.concat(allowedArgumentTypeSet, ", "));
+		errorString = errorString..string.format("%s%s%s(%s)", className, (usesPeriodInsteadOfSemiColon and "." or ":"), functionName, table.concat(allowedArgumentTypeSet, ", "));
 		errorString = errorString.."\n";
 	end
 	ConsoleMan:PrintString(errorString);
@@ -82,6 +84,71 @@ end
 --END UNMODIFIABLE SECTION--
 
 --START MODIFIABLE SECTION--
+
+---------------------------------------------
+-------Core Lua Function Modifications-------
+--------------------NOTE:--------------------
+------Do not replace core Lua Functions------
+----------------Only Add Them----------------
+---------------------------------------------
+table.listToSet = function(list, valueToGiveEntries)
+	local argumentErrorTable = {"table", "listToSet", {type(list), type(valueToGiveEntries)}, {{"table"}, {"table", "a non-nil value"}}, usesPeriodInsteadOfSemiColon = true};
+	
+	if (type(list) ~= "table") then
+		printArgumentError(argumentErrorTable);
+	end
+
+	if (valueToGiveEntries == nil) then
+		valueToGiveEntries = true;
+	end
+	
+	local set = {}
+	for _, listElement in ipairs(list) do
+		set[listElement] = valueToGiveEntries;
+	end
+    
+	return set;
+end
+
+table.setToList = function(set, valueNeededToAddToList)
+	local argumentErrorTable = {"table", "setToList", {type(set), type(valueNeededToAddToList)}, {{"table"}, {"table", "any value"}}, usesPeriodInsteadOfSemiColon = true};
+	
+	if (type(set) ~= "table") then
+		printArgumentError(argumentErrorTable);
+	end
+	
+	local list = {};
+	for setElementKey, setElementValue in pairs(set) do
+		if (valueNeededToAddToList == nil or setElementValue == valueNeededToAddToList) then
+			table.insert(list, setElementKey);
+		end
+	end
+	
+	return list;
+end
+
+function string.split(stringToSplit, separator)
+	local argumentErrorTable = {"string", "split", {type(stringToSplit), type(separator)}, {{"string", "string"}}, usesPeriodInsteadOfSemiColon = true};
+	if (type(stringToSplit) ~= "string" or type(separator) ~= "string") then
+		printArgumentError(argumentErrorTable);
+	end
+	
+	return stringToSplit:split(separator);
+end
+
+function string:split(separator)
+	local argumentErrorTable = {"string", "split", {type(separator)}, {{"string"}}};
+	if (type(separator) == "nil") then
+		printArgumentError(argumentErrorTable);
+	end
+
+	local fields = {};
+	self:gsub(string.format("([^%s]+)", separator), function(splitString) fields[#fields+1] = splitString end);
+	return fields;
+end
+---------------------------------------
+--End Core Lua Function Modifications--
+---------------------------------------
 
 ---------------
 --SceneObject--
@@ -266,6 +333,27 @@ end
 ----------------
 do 
 	local SceneManagerModifications = {};
+	
+	function SceneManagerModifications:GetTerrMatter(point, ...)
+		local argumentErrorTable = {"SceneManager", "GetTerrMatter", {type(point) == "userdata" and point.ClassName or type(point)}, {{"Vector"}, {"number", "number"}}};
+		
+		if (select("#", ...) > 0) then
+			local yValue = select(1, ...);
+			
+			table.insert(argumentErrorTable[3], type(yValue));
+			if (type(point) ~= "number" or type(yValue) ~= number) then
+				printArgumentError(argumentErrorTable);
+			end
+			
+			return self:GetTerrMatter_BASE(point, yValue);
+		end
+		
+		if (type(point) ~= "userdata" or point.ClassName ~= "Vector") then
+			printArgumentError(argumentErrorTable);
+		end
+		
+		return self:GetTerrMatter_BASE(point.X, point.Y);
+	end
 	
 	function SceneManagerModifications:TargetDistanceScalar(point, ...)
 		local argumentErrorTable = {"SceneManager", "TargetDistanceScalar", {type(point) == "userdata" and point.ClassName or type(point)}, {{"Vector"}, {"Vector", "number"}}};

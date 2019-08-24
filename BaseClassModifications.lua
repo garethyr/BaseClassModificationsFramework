@@ -146,6 +146,26 @@ function string:split(separator)
 	self:gsub(string.format("([^%s]+)", separator), function(splitString) fields[#fields+1] = splitString end);
 	return fields;
 end
+
+function math.normaliseDegAngle(angleInDegrees)
+	local argumentErrorTable = {"math", "normaliseDegAngle", {type(angleInDegrees)}, {{"number"}}, usesPeriodInsteadOfSemiColon = true};
+	
+	if (type(angleInDegrees) ~= "number") then
+		printArgumentError(argumentErrorTable);
+	end
+	
+	return ((angleInDegrees % 360) + 360) % 360;
+end
+
+function math.normaliseRadAngle(angleInRadians)
+	local argumentErrorTable = {"math", "normaliseRadAngle", {type(angleInRadians)}, {{"number"}}, usesPeriodInsteadOfSemiColon = true};
+	
+	if (type(angleInRadians) ~= "number") then
+		printArgumentError(argumentErrorTable);
+	end
+	
+	return math.rad(math.normaliseDegAngle(math.deg(angleInRadians)));
+end
 ---------------------------------------
 --End Core Lua Function Modifications--
 ---------------------------------------
@@ -341,7 +361,7 @@ do
 			local yValue = select(1, ...);
 			
 			table.insert(argumentErrorTable[3], type(yValue));
-			if (type(point) ~= "number" or type(yValue) ~= number) then
+			if (type(point) ~= "number" or type(yValue) ~= "number") then
 				printArgumentError(argumentErrorTable);
 			end
 			
